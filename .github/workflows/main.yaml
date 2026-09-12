@@ -1,0 +1,44 @@
+name: Kubernetes Task
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+  
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Generate a token
+      id: generate-token
+      uses: actions/create-github-app-token@v2
+      with:
+        app-id: ${{ secrets.APP_ID }}
+        private-key: ${{ secrets.APP_PRIVATE_KEY }}
+    - uses: actions/checkout@v6
+    - name: Create k8s Kind Cluster
+      uses: helm/kind-action@v1
+    - name: Build and start containers for a services
+      run: |
+        kubectl apply -f 01-sql-secret.yaml
+        kubectl apply -f 02-mysql.yaml
+        kubectl apply -f task-01-deployment.yaml
+        kubectl apply -f task-02-service.yaml
+        kubectl wait pods --all --for condition=Ready
+    - name: Port Forward to webservice
+      run: kubectl port-forward service/wordpress 8080:80 &
+    - name: Test containers functionality
+      uses: cypress-io/github-action@v6
+      env:
+        CYPRESS_BASE_URL: http://localhost:8080
+      with:
+        working-directory: ./.github/tests
+    - name: Final Step
+      env:
+        GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+      run: |
+        gh repo edit $GITHUB_REPOSITORY --visibility private --accept-visibility-change-consequences
