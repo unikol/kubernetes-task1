@@ -1,3 +1,4 @@
+[![Kubernetes Task](https://github.com/unikol/kubernetes-task1/actions/workflows/main.yaml/badge.svg)](https://github.com/unikol/kubernetes-task1/actions/workflows/main.yaml)
 # Kubernetes task
 
 With this task you will write manifests to build the following architecture:
